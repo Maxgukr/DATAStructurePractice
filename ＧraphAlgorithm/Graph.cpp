@@ -30,7 +30,7 @@ private:
     int v2;
     int weight;
 };
-
+   map<pair<int,int>,int> weight;
 typedef struct Graphic
 {
     vector<int> vertexs; // number of vertexs
