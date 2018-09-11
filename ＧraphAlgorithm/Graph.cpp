@@ -4,43 +4,24 @@
 #include <stack>
 #include <queue>
 #include <iostream>
+#include <map>
+#include "miniheap.h"
+
 #define maxsize 10
 using namespace std;
 //Graph represent by adj-list
 
 
-struct edgeAdj //
-{
-    int adjData; //save adj vertex node sub
-    int weight; // weight between two vertexs
-    edgeAdj* next; // point to next adj vertex
-};
-
-struct vertexNode
-{
-    int data; // save each adjlist's vertex data
-    edgeAdj* firstEdge;
-};//vertexNode, Adjlist[maxsize];
-
-class eEdge
+class Graphic
 {
     friend class GraphicOperaion;
-private:
-    int v1;
-    int v2;
-    int weight;
+    private:
+    vector<int> vertexs; // 
+    vector<int> adj[maxsize];//adjlist
+    int weight[maxsize][maxsize];//weight matrix
 };
-   map<pair<int,int>,int> weight;
-typedef struct Graphic
-{
-    vector<int> vertexs; // number of vertexs
-    vector<eEdge*> edges; //number of edges
-    vertexNode adjlist[maxsize]; //adjlist of Graph
-    //list<pair<int,int>> *adj;
 
-}Graphic;
-
-class GraphicOperaion
+class GraphicOperaion:public Minheap
 {
 private:
     Graphic* Graph;
@@ -50,66 +31,99 @@ public:
         Graph = new Graphic; //create a new Graph objectGraph
     }
     //initialization
-    void CreatGraphic(vector<int> &vertexList, vector<eEdge*> &edge); //only vertex no edges
-    vector<eEdge*> CreateEdge(vector<vector<int>> &edge);
-    void InsertGraphic(eEdge* E); //insert a edge
-    void BuildGraphic(vector<int> &vertexList, vector<eEdge*> &edges);
+    void initialGraph(vector<int> &ver, vector<vector<int>> &edge);
     //operation
-    void BreadFirstSearch(Graphic* Graph);
-    void DepthFirstSearch(Graphic* Graph);
-    int MST_Prim(Graphic* Graph, int s); // minimum weight spaning tree
-    int MST_Kruskal(Graphic* Graph, int s); // minimum weight spaning tree
+    void BreadFirstSearch(int s);
+    void DepthFirstSearch(int s);
+    int MST_Prim(int s); // minimum weight spaning tree
+    int MST_Kruskal(int s); // minimum weight spaning tree
     list<int> singleSourceShortestPath_Bellman_Ford(Graphic* Graph, int s); //shortest path from s to the other vertexs
     list<int> singleSourceShortestPath_Dijkstra(Graphic* Graph, int s);
     int maximumFlow(Graphic* Graph, int s,int t); //by edmonds karp
 };
 
-void GraphicOperaion::CreatGraphic(vector<int> &vertexList, vector<eEdge*> &edge)
+void GraphicOperaion::initialGraph(vector<int> &ver, vector<vector<int>> &edge)
 {
-    Graph->vertexs = vertexList; // vertexs
-    Graph->edges = edge; // edges
-
-    for(unsigned v=0;v<vertexList.size();v++)
-    {
-        (Graph->adjlist+vertexList[v])->firstEdge = NULL;
-    }
-}
-
-vector<eEdge*> GraphicOperaion::CreateEdge(vector<vector<int>> &edge)
-{
-    vector<eEdge*> Edge;
+    Graph->vertexs = ver;
     for (unsigned i=0;i<edge.size();i++)
     {
-        Edge[i] = new eEdge();
-        Edge[i]->v1 = edge[i][0];
-        Edge[i]->v2 = edge[i][1];
-        Edge[i]->weight = edge[i][2];
+        Graph->adj[edge[i][0]-1].push_back(edge[i][1]-1); // create adjlist
+        //Graph->adj[edge[i][0]-1].push_back(edge[i][1]-1);
+        Graph->weight[edge[i][0]-1][edge[i][1]-1] = edge[i][2];// assign weight
     }
-    return Edge;
+
 }
 
-void GraphicOperaion::InsertGraphic(eEdge* e)
+void GraphicOperaion::BreadFirstSearch(int s)
 {
-    edgeAdj* newnode = new edgeAdj;
-    newnode->weight = e->weight;
-    // uodate node
-    newnode->next = (Graph->adjlist+e->v1)->firstEdge;
-    (Graph->adjlist+e->v1)->firstEdge = newnode;
-}
+    vector<bool> mark(maxsize,false); // 
+    queue<int> q; //create a null queue
+    q.push(s);
+    mark[s]=true;
 
-void GraphicOperaion::BuildGraphic(vector<int> &vertexList, vector<eEdge*> &edges)
-{
-    CreatGraphic(vertexList, edges);
-    //Graph->Ne = edges.size();
-
-    //create and insert edges
-    if (edges.size() != 0)
+    while(!q.empty())
     {
-        //eEdge* E = new eEdge();
-        for(unsigned i=0; i<edges.size(); i++)
+        s = q.front();
+        cout<<s+1<<endl;
+        q.pop();
+        for (unsigned i=0;i<Graph->adj[s].size();i++)// all vertexs in adjlists respect to s
         {
-            //cin>>E->v1>>E->v2>>E->weight;
-            InsertGraphic(edges[i]);
+            if(!mark[Graph->adj[s][i]])
+            {
+                mark[Graph->adj[s][i]] = true;
+                q.push(Graph->adj[s][i]);
+            }
+        }
+    }
+}
+
+void GraphicOperaion::DepthFirstSearch(int s)
+{
+    stack<int> nodestack;
+    vector<bool> visited(maxsize,false);//initial all 0
+
+    nodestack.push(s);//source node push stack
+    visited[s] = true;
+
+    int cur_node;
+    while(!nodestack.empty())
+    {
+        cur_node = nodestack.top();
+        nodestack.pop();
+        cout<<cur_node+1<<" ";
+        for(unsigned i=0;i<Graph->adj[cur_node].size();i++)
+        {
+            if(!visited[Graph->adj[cur_node][i]])
+            {
+                visited[Graph->adj[cur_node][i]] = true;
+                nodestack.push(Graph->adj[cur_node][i]);
+            }
+        }
+    }
+}
+
+int GraphicOperaion::MST_Prim(int s)
+{
+    vector<bool> visited(maxsize,false);
+    key[s] = 0;
+    visited[s] = true;
+    for (unsigned i=0;i<Graph->adj[s].size();i++)
+    {
+        insert(Graph->adj[s][i], Graph->weight[s][Graph->adj[s][i]]+key[s]);
+    }
+
+    int sum = 0;
+    while(!heap.size())
+    {
+        int num = extract_min();
+        sum += key[num];//weight increase
+        visited[num] = true;
+        for(unsigned i=0;i<Graph->adj[num].size();i++)
+        {
+            if(!visited[i])
+            {
+                insert(Graph->adj[num][i], Graph->weight[num][Graph->adj[num][i]]);
+            }
         }
     }
 }
